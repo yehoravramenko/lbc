@@ -17,6 +17,7 @@ begin
 
   Lex := TLexer.Create(System.ParamStr(1));
   Lex.GetNextToken;
+  System.WriteLn(Lex.TokenString);
 
   // repeat
     

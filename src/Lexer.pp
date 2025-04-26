@@ -12,43 +12,42 @@ uses
   CompilerMessage;
 
 type
-  TToken = (CommentStart, CommentEnd);
+  TToken = (Identifier, ParenOpen, ParenClose, CurlyBracketOpen, CurlyBracketClose);
 
   TLexer = class
   private
     FCurrentFilePath: string;
     FCurrentFile: string;
 
-    FCurrentFileAbsolutePos: integer;
-    FCurrentFileLine, FCurrentFileLineOffset: integer;
+    FCurrentAbsolutePos: integer;
+    FCurrentLine, FCurrentLineOffset: integer;
     
     FCurrentChar, FPreviousChar: char;
 
-    FCurrentToken: TToken;
+    // FCurrentToken: TToken;
+
+    FTokenString: string;
+    FTokenInt: integer;
     
-    procedure GetNextChar;
+    function IsNewLine: boolean;
+    function GetNextChar: integer;
+
     procedure Error(const Message: string; const Details: string);
     procedure Error(const Message: string); overload;
   public
     constructor Create(const FilePath: string);
-    procedure GetNextToken;
+    function GetNextToken: TToken;
 
     property CurrentFile: string read FCurrentFile;
-    property CurrentToken: TToken read FCurrentToken;
-  end;
 
-const
-  TokenValue: array[TToken] of string = (
-    '/*', // CommentStart
-    '*/'  // CommentEnd
-  );
+    property TokenString: string read FTokenString;
+    property TokenInt: integer read FTokenInt;
+  end;
 
 implementation
 
 function IsSpace(const C: char): boolean; inline;
-begin result := (C in [' ', EscCodes.Tab, EscCodes.LF, EscCodes.CR]); { space, tab, LF, CR } end;
-
-
+begin result := (C in [' ', EscCodes.Tab, EscCodes.LF, EscCodes.CR]); end;
 
 function IsAlpha(const C: char): boolean; inline;
 begin result := (C in ['A'..'Z', 'a'..'z']); end;
@@ -75,59 +74,75 @@ begin
 
   self.FCurrentFilePath := FilePath;
 
-  self.FCurrentFileAbsolutePos := 1;
-  self.FCurrentFileLine := 1;
-  self.FCurrentFileLineOffset := 1;
-
-  self.FCurrentChar := self.FCurrentFile[1];
-  self.FPreviousChar := #0;
+  self.FCurrentAbsolutePos := 0;
+  self.FCurrentLine := 1;
+  self.FCurrentLineOffset := 0;
 end;
 
-procedure TLexer.GetNextChar;
+function TLexer.IsNewLine: boolean;
 begin
-  if self.FCurrentFileAbsolutePos >= System.Length(self.FCurrentFile) then
-    self.Error('Unexpected EOF');
+{$IFDEF WINDOWS}
+  result := (self.FPreviousChar + self.FCurrentChar = EscCodes.NewLine);
+{$ELSE}
+  result := (self.FCurrentChar = EscCodes.NewLine);
+{$ENDIF}
+end;
 
-  self.FCurrentFileAbsolutePos += 1;
-  if self.FCurrentChar = EscCodes.NewLine then
+function TLexer.GetNextChar: integer;
+begin
+  if self.FCurrentAbsolutePos >= System.Length(self.FCurrentFile) then
+    exit(-1);
+
+  self.FCurrentAbsolutePos += 1;
+  if self.IsNewLine then
   begin
-    self.FCurrentFileLine += 1;
-    self.FCurrentFileLineOffset := 1;
+    self.FCurrentLine += 1;
+    self.FCurrentLineOffset := 1;
   end
   else
-    self.FCurrentFileLineOffset += 1;
+    self.FCurrentLineOffset += 1;
 
   self.FPreviousChar := self.FCurrentChar;
-  self.FCurrentChar := self.FCurrentFile[self.FCurrentFileAbsolutePos];
+  self.FCurrentChar := self.FCurrentFile[self.FCurrentAbsolutePos];
+  result := 0;
 end;
 
-procedure TLexer.GetNextToken;
+function TLexer.GetNextToken: TToken;
+var
+  StartingLine: integer;
 begin
   repeat
-    while IsSpace(self.FCurrentChar) do
-        self.GetNextChar;
+    repeat
+      self.GetNextChar;
+    until not IsSpace(self.FCurrentChar);
 
     { Check comments }
     if self.FPreviousChar + self.FCurrentChar = '/*' then
     begin
-      CompilerMessage.Log('Comment occured, skipping...');
-      System.WriteLn('Pos: ', self.FCurrentFileAbsolutePos);
+      StartingLine := self.FCurrentLine;
       while self.FPreviousChar + self.FCurrentChar <> '*/' do
-        self.GetNextChar;
-      CompilerMessage.Log('End of comment');
-      System.WriteLn('Pos: ', self.FCurrentFileAbsolutePos);
+      begin
+        if self.GetNextChar = -1 then
+          self.Error('Unexpected EOF', 'Did you forget to insert */ after line ' + StartingLine.ToString + '?');
+      end;
       break;
-    end
-    else
-    begin
-      self.GetNextChar;
     end;
-  until false { or self.FCurrentFileAbsolutePos >= System.Length(self.FCurrentFile) };
+
+    if IsAlpha(self.FCurrentChar) then
+    begin
+      repeat
+        self.FTokenString += self.FCurrentChar;
+        self.GetNextChar;
+      until not IsAlnum(self.FCurrentChar);
+      result := TToken.Identifier;
+      exit;
+    end;
+  until false { or self.FCurrentAbsolutePos >= System.Length(self.FCurrentFile) };
 end;
 
 procedure TLexer.Error(const Message: string; const Details: string);
 begin
-  Write(self.FCurrentFilePath, ':', self.FCurrentFileLine, ':', self.FCurrentFileLineOffset, ':' + EscCodes.Tab);
+  System.Write(self.FCurrentFilePath, ':', self.FCurrentLine, ':', self.FCurrentLineOffset + 1, ':' + EscCodes.Tab);
   CompilerMessage.Error(Message, Details);
 end;
 
