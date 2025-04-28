@@ -1,0 +1,23 @@
+LBC := lbc
+
+BIN_DIR := bin
+CFLAGS := -Mobjfpc -Tlinux -Px86_64 -g
+
+.PHONY: all
+all: $(LBC)
+
+.PHONY: $(LBC)
+$(LBC): src/lbc.pp
+	@mkdir -p $(BIN_DIR)
+	fpc $< -o"$(BIN_DIR)/$(LBC)" $(CFLAGS)
+
+.PHONY: clean
+clean: $(BIN_DIR)
+	rm -rf $</$(LBC)
+	rm -rf "$</*.o"
+	rm -rf "$</*.ppu"
+
+.PHONY: run
+run: $(BIN_DIR)
+	@printf '\n'
+	@cd $< && ./$(LBC)

@@ -4,6 +4,7 @@ interface
 
 uses
   Crt,        // TextColor
+  Process,
 
   EscCodes;
 
@@ -17,8 +18,8 @@ implementation
 procedure Log(const Message: string);
 begin
   Crt.TextColor(Crt.Green);
-  System.Write('LOG:' + EscCodes.Tab);
-  Crt.TextColor(Crt.White);
+  System.Write('LOG:  ');
+  Crt.NormVideo;
 
   System.WriteLn(Message);
 end;
@@ -26,8 +27,8 @@ end;
 procedure Error(const Message: string; const Details: string);
 begin
   Crt.TextColor(Crt.Red);
-  System.Write('ERROR:' + EscCodes.Tab);
-  Crt.TextColor(Crt.White);
+  System.Write('ERROR:  ');
+  Crt.NormVideo;
 
   System.WriteLn(Message + EscCodes.NewLine + EscCodes.Tab + Details);
 

@@ -35,7 +35,7 @@ type
     procedure Error(const Message: string; const Details: string);
     procedure Error(const Message: string); overload;
   public
-    constructor Create(const FilePath: string);
+    constructor Create(FilePath: string);
     function GetNextToken: TToken;
 
     property CurrentFile: string read FCurrentFile;
@@ -57,13 +57,20 @@ begin result := (IsAlpha(C) or (C in ['0'..'9'])); end;
 
 {----------------------------------------------------------}
 
-constructor TLexer.Create(const FilePath: string);
+constructor TLexer.Create(FilePath: string);
 var
   FileStream: TFileStream;
 begin
   if not SysUtils.FileExists(FilePath) then
   begin
-    CompilerMessage.Error('Failed to open file ' + FilePath);
+    if SysUtils.FileExists(FilePath + '.b') then
+    begin
+      FilePath += '.b';
+    end
+    else
+    begin 
+      CompilerMessage.Error('Failed to open file ' + FilePath);
+    end;
   end;
 
   FileStream := TFileStream.Create(FilePath, fmOpenRead);
