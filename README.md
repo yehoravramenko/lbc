@@ -1,13 +1,14 @@
 # lbc - Lovely B Compiler
 
 > [!WARNING]
-> Compiler is WIP not fully implemented yet.
+> Compiler is WIP and not fully implemented yet.
 
 Author of original idea is [rexim](https://github.com/rexim), 
-who implemented [B programming language](https://en.wikipedia.org/wiki/B_(programming_language)) compiler
-during his streams.
+who implemented [B programming language](https://en.wikipedia.org/wiki/B_(programming_language)) 
+compiler in [Crust](https://github.com/tsoding/crust) during his streams.
 
-Compiler is implemented with official reference documentation, made by Ken Thompson dated January 7, 1972.
+LBC is written in Object Pascal for the sake of Recreational Programming&trade; 
+and implemented with official reference documentation, made by Ken Thompson and dated January 7, 1972.
 
 ## References
 
