@@ -14,8 +14,8 @@ $(LBC): src/lbc.pp
 .PHONY: clean
 clean: $(BIN_DIR)
 	rm -rf $</$(LBC)
-	rm -rf "$</*.o"
-	rm -rf "$</*.ppu"
+	rm -rf $</*.o
+	rm -rf $</*.ppu
 
 .PHONY: run
 run: $(BIN_DIR)
